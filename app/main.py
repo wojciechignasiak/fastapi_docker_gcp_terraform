@@ -1,7 +1,7 @@
 #internal modules
 from app.database.connection.create_engine import create_engine
 from app.models.app_config_models.database_credentials_model import DatabaseCredentials
-# from secret_manager.secret_manager import new_secret_manager, ISecretManager
+from app.secret_manager.secret_manager import new_secret_manager, ISecretManager
 
 ##routers
 from app.routers import (
@@ -23,10 +23,12 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette import middleware
 from dotenv import load_dotenv
 
+from app.secret_manager.secret_manager import SecretManager
+
 load_dotenv()
 
 ENVIRONMENT: str = os.environ.get("ENVIRONMENT")
-# secret_manager: ISecretManager = new_secret_manager()
+secret_manager: ISecretManager = new_secret_manager()
 
 logging.basicConfig(
     filename='./app/logs/logs.log',
@@ -50,18 +52,7 @@ async def lifespan(app: FastAPI):
     ''' Run at startup
             Initialise databases clients.
     '''
-    print(f"Environment: {ENVIRONMENT}")
-    if ENVIRONMENT == "production" or ENVIRONMENT == "sit":
-        pass
-    if ENVIRONMENT == "development":
-        database_credentials: DatabaseCredentials = DatabaseCredentials(
-            database=os.environ.get("POSTGRES_DATABASE"),
-            username=os.environ.get("POSTGRES_USERNAME"),
-            password=os.environ.get("POSTGRES_PASSWORD"),
-            host=os.environ.get("POSTGRES_HOST"),
-            port=str(os.environ.get("POSTGRES_PORT"))
-        )
-    # database_credentials: DatabaseCredentials = secret_manager.get_database_credentials()
+    database_credentials: DatabaseCredentials = secret_manager.get_database_credentials()
 
     engine: AsyncEngine = create_engine(database_credentials)
     app.state.engine = engine

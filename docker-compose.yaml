@@ -4,7 +4,7 @@ networks:
     driver: bridge
 
 volumes:
-  postgres-volume:
+  database-volume:
 
 services:
 ######################Python SERVICES - Beginning###########################
@@ -16,11 +16,11 @@ services:
       dockerfile: Dockerfile.dev
     environment:
       - ENVIRONMENT=${ENVIRONMENT}
-      - POSTGRES_DATABASE=${POSTGRES_DATABASE}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-      - POSTGRES_USERNAME=${POSTGRES_USERNAME}
-      - POSTGRES_HOST=${POSTGRES_HOST}
-      - POSTGRES_PORT=${POSTGRES_PORT}
+      - DATABASE_NAME=${DATABASE_NAME}
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD}
+      - DATABASE_USERNAME=${DATABASE_USERNAME}
+      - DATABASE_HOST=${DATABASE_HOST}
+      - DATABASE_PORT=${DATABASE_PORT}
     ports:
       - 8080:80
     expose:
@@ -31,15 +31,15 @@ services:
     volumes:
       - ./app:/usr/src/app/
     depends_on:
-      - postgresql
+      - database
 
 ######################FastAPI SERVICES - End###########################
 
 ######################Databases SERVICES - Beginning###########################
 
-  postgresql:
+  database:
     container_name: postgresql
-    image: postgres:15.0-alpine
+    image: postgres:17.0-alpine
     ports:
       - 5433:5432
     expose:
@@ -47,11 +47,11 @@ services:
     networks:
       - backend-network
     environment:
-      - POSTGRES_DB=${POSTGRES_DATABASE}
-      - POSTGRES_USER=${POSTGRES_USERNAME}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${DATABASE_NAME}
+      - POSTGRES_USER=${DATABASE_USERNAME}
+      - POSTGRES_PASSWORD=${DATABASE_PASSWORD}
     restart: always
     volumes:
-      - postgres-volume:/var/lib/postgresql/data
+      - database-volume:/var/lib/postgresql/data
 
 ######################Databases SERVICES - End###########################
