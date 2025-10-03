@@ -1,0 +1,9 @@
+#1st party libraries
+from uuid import UUID
+
+#3rd party libraries
+from pydantic import BaseModel
+
+class JobPositionResponseModel(BaseModel):
+    id: UUID
+    name: str
