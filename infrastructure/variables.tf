@@ -1,0 +1,59 @@
+variable "project_id" {
+  description = "fintec-python-developer"
+  type        = string
+  default = "fintec-python-developer"
+}
+
+variable "region" {
+  description = "GCP Region"
+  type        = string
+  default     = "europe-west3"
+}
+
+variable "zone" {
+  description = "GCP Zone"
+  type        = string
+  default     = "europe-west3-a"
+}
+
+variable "vpc_network_name" {
+  description = "VPC network name"
+  type = string
+  default = "fintec-vpc-network"
+}
+
+variable "firewall_name" {
+  description = "Firewall name"
+  type = string
+  default = "fintec-firewall"
+}
+
+variable "web_app_vm_instance_name" {
+  description = "Web Application Virtual Machine instance name"
+  type = "string"
+  default = "fintec-vm"
+}
+
+variable "database_name" {
+  description = "Database instance name"
+  type        = string
+  default     = "fintec-python-developer-database"
+}
+
+variable  "database_username"  {
+  description = "Username to use for the database"
+  type        = string
+  default = "fastapi_app"
+}
+
+variable "database_port" {
+  description = "Database port"
+  type = string
+  default = "5432"
+}
+
+variable "environment" {
+  description = "Environment of infrastructure"
+  type = string
+  default = "production"
+}
