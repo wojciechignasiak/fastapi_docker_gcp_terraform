@@ -7,3 +7,10 @@ from pydantic import BaseModel
 class JobPositionResponseModel(BaseModel):
     id: UUID
     name: str
+
+class GetAllJobPositionsResponseModel(BaseModel):
+    page_size: int
+    page: int
+    total_number_of_entities: int
+    last_page: int
+    entities: list[JobPositionResponseModel]

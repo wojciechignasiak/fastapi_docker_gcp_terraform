@@ -5,7 +5,7 @@ from app.custom_exceptions.custom_exceptions import DatabaseError
 
 #3rd party libraries
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, Result, func
 from fastapi import Depends
 
 #1st party libraries
@@ -21,10 +21,13 @@ class IJobPositionRepository(Protocol):
     async def create_job_position(self, job_position: JobPositionSchema) -> None:
         ...
 
-    async def get_all_job_positions(self) -> tuple[JobPositionSchema, ...] | tuple:
+    async def get_multiple_job_positions_by_id(self, job_positions_ids: tuple[UUID, ...]) -> tuple[JobPositionSchema, ...] | tuple:
         ...
 
-    async def get_multiple_job_positions_by_id(self, job_positions_ids: tuple[UUID, ...]) -> tuple[JobPositionSchema, ...] | tuple:
+    async def count_number_of_all_job_positions(self) -> int:
+        ...
+
+    async def get_all_job_positions(self, page_size: int, page: int) -> tuple[JobPositionSchema, ...] | tuple:
         ...
 
     async def get_job_position_by_id(self, job_position_id: UUID) -> JobPositionSchema | None:
@@ -59,7 +62,7 @@ class JobPositionRepository(IJobPositionRepository):
     async def get_multiple_job_positions_by_id(self, job_positions_ids: tuple[UUID, ...]) -> tuple[JobPositionSchema, ...] | tuple:
         try:
             statement = select(JobPositionSchema).where(JobPositionSchema.id.in_(job_positions_ids))
-            result = await self.session.execute(statement)
+            result: Result = await self.session.execute(statement)
             job_positions = result.scalars().all()
             return tuple(job_positions)
         except Exception as e:
@@ -68,10 +71,22 @@ class JobPositionRepository(IJobPositionRepository):
                 status_code=500,
             )
 
-    async def get_all_job_positions(self) -> tuple[JobPositionSchema, ...]:
+    async def count_number_of_all_job_positions(self) -> int:
         try:
-            statement = select(JobPositionSchema)
-            result = await self.session.execute(statement)
+            statement = select(func.count()).select_from(JobPositionSchema)
+            total_result: Result = await self.session.execute(statement)
+            total_count: int = total_result.scalar_one()
+            return total_count
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while getting all job positions: {e}")
+            raise DatabaseError(
+                status_code=500,
+            )
+
+    async def get_all_job_positions(self, page_size: int, page: int) -> tuple[JobPositionSchema, ...]:
+        try:
+            statement = select(JobPositionSchema).limit(page_size).offset((page - 1) * page_size)
+            result: Result = await self.session.execute(statement)
             job_positions = result.scalars().all()
             return tuple(job_positions)
         except Exception as e:

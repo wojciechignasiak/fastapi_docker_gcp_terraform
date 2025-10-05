@@ -1,7 +1,7 @@
 #internal modules
 from app.services.job_position_service import IJobPositionService, new_job_position_service
-from app.models.job_position_models.job_position_request_models import CreateJobPositionRequestModel
-from app.models.job_position_models.job_position_response_models import JobPositionResponseModel
+from app.models.job_position_models.job_position_request_models import CreateJobPositionRequestModel, GetAllJobPositionsRequestModel
+from app.models.job_position_models.job_position_response_models import JobPositionResponseModel, GetAllJobPositionsResponseModel
 from app.custom_exceptions.custom_exceptions import CustomException
 
 #3rd party libraries
@@ -51,12 +51,13 @@ async def get_job_position(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 
-@router.get("/get-all-job-positions/", response_model=list[JobPositionResponseModel], status_code=status.HTTP_200_OK)
+@router.post("/get-all-job-positions/", response_model=GetAllJobPositionsResponseModel, status_code=status.HTTP_200_OK)
 async def get_all_job_positions(
+        pagination: GetAllJobPositionsRequestModel,
         job_position_service: IJobPositionService = Depends(new_job_position_service),
 ):
     try:
-        candidates: list[JobPositionResponseModel] = await job_position_service.get_all_job_positions()
+        candidates: GetAllJobPositionsResponseModel = await job_position_service.get_all_job_positions(pagination)
         return candidates
     except CustomException as e:
         if e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:

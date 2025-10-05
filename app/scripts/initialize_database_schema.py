@@ -8,16 +8,8 @@ from app.secret_manager.secret_manager import ISecretManager, new_secret_manager
 #3rd party libraries
 from sqlmodel import SQLModel, create_engine
 
-#1st party libraries
-import os
 
-
-
-
-
-def init_db():
-    secret_manager: ISecretManager = new_secret_manager()
-    database_credentials: DatabaseCredentials = secret_manager.get_database_credentials()
+def init_db(database_credentials: DatabaseCredentials):
     database_url = f"postgresql://{
     database_credentials.username
     }:{
@@ -33,4 +25,6 @@ def init_db():
     SQLModel.metadata.create_all(engine, tables=[CandidateSchema.__table__, JobPositionSchema.__table__, JobPositionCandidateSchema.__table__])
 
 if __name__ == "__main__":
-    init_db()
+    secret_manager: ISecretManager = new_secret_manager()
+    database_credentials: DatabaseCredentials = secret_manager.get_database_credentials()
+    init_db(database_credentials)

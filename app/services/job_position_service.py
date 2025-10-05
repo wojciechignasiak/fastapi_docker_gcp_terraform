@@ -1,7 +1,7 @@
 # internal modules
 from app.database.repositories.job_position_repository import IJobPositionRepository, new_job_position_repository
-from app.models.job_position_models.job_position_request_models import CreateJobPositionRequestModel
-from app.models.job_position_models.job_position_response_models import JobPositionResponseModel
+from app.models.job_position_models.job_position_request_models import CreateJobPositionRequestModel, GetAllJobPositionsRequestModel
+from app.models.job_position_models.job_position_response_models import JobPositionResponseModel, GetAllJobPositionsResponseModel
 from app.database.schema.job_position_schema import JobPositionSchema
 from app.custom_exceptions.custom_exceptions import DataNotFoundError, ServiceError, CustomException
 
@@ -26,7 +26,7 @@ class IJobPositionService(Protocol):
     async def get_multiple_job_positions_by_id(self, job_position_ids: tuple[UUID, ...]) -> list[JobPositionResponseModel]:
         ...
 
-    async def get_all_job_positions(self) -> list[JobPositionResponseModel]:
+    async def get_all_job_positions(self, pagination: GetAllJobPositionsRequestModel) -> GetAllJobPositionsResponseModel:
         ...
 
     async def remove_job_position_by_id(self, job_position_id: UUID) -> None:
@@ -90,16 +90,23 @@ class JobPositionService(IJobPositionService):
                 status_code=500,
             )
 
-    async def get_multiple_job_positions_by_id(self, job_position_ids: tuple[UUID, ...]) -> list[JobPositionResponseModel]:
+    async def get_multiple_job_positions_by_id(self, job_positions_ids: tuple[UUID, ...]) -> list[JobPositionResponseModel]:
         try:
             job_positions_schemas: tuple[
                 JobPositionSchema, ...
             ] = await self._job_position_repository.get_multiple_job_positions_by_id(
-                job_position_ids
+                job_positions_ids
             )
             if not job_positions_schemas:
                 raise DataNotFoundError(
                     message="No job positions found",
+                    status_code=404,
+                )
+            missing_job_positions_ids: tuple[UUID, ...] | tuple = self._extract_missing_job_positions_ids(job_positions_ids,
+                                                                                                   job_positions_schemas)
+            if missing_job_positions_ids:
+                raise DataNotFoundError(
+                    message=f"Job positions with ids {missing_job_positions_ids} not found",
                     status_code=404,
                 )
             job_position_response_models: list[JobPositionResponseModel] = [
@@ -119,21 +126,44 @@ class JobPositionService(IJobPositionService):
                 status_code=500,
             )
 
-    async def get_all_job_positions(self) -> list[JobPositionResponseModel]:
+    async def get_all_job_positions(self, pagination: GetAllJobPositionsRequestModel) -> GetAllJobPositionsResponseModel:
         try:
+            total_number_of_job_positions: int = await self._job_position_repository.count_number_of_all_job_positions()
+            if total_number_of_job_positions == 0:
+                raise DataNotFoundError(
+                    message="No job positions found",
+                    status_code=404,
+                )
+            last_page: int = self._calculate_last_page_number_for_get_all_job_positions_response_model(
+                total_number_of_job_positions=total_number_of_job_positions,
+                page_size=pagination.page_size
+            )
             job_positions_schemas: tuple[
-                JobPositionSchema, ...] = await self._job_position_repository.get_all_job_positions()
+                JobPositionSchema, ...] = await self._job_position_repository.get_all_job_positions(
+                page_size=pagination.page_size,
+                page=pagination.page
+            )
             if not job_positions_schemas:
                 raise DataNotFoundError(
                     message="No job positions found",
                     status_code=404,
                 )
+
             job_position_response_models: list[JobPositionResponseModel] = [
                 self._convert_job_position_schema_to_job_position_response_model(job_position_schema)
                 for job_position_schema
                 in job_positions_schemas
             ]
-            return job_position_response_models
+            get_all_job_positions_response_model: GetAllJobPositionsResponseModel = self._create_get_all_job_positions_response_model(
+                page_size=pagination.page_size,
+                page=pagination.page,
+                total_number_of_job_positions=total_number_of_job_positions,
+                last_page=last_page,
+                job_positions_response_models=job_position_response_models,
+            )
+
+
+            return get_all_job_positions_response_model
         except CustomException as e:
             raise ServiceError(
                 message=e.message,
@@ -183,6 +213,55 @@ class JobPositionService(IJobPositionService):
             )
         except Exception as e:
             logger.error(f"Unexpected error occurred while converting job position request model to job position schema: {e}")
+            raise ServiceError(
+                status_code=500,
+            )
+
+    @staticmethod
+    def _extract_missing_job_positions_ids(job_positions_ids: tuple[UUID, ...],
+                                        job_positions_schemas: tuple[JobPositionSchema, ...]) -> tuple[UUID, ...] | tuple:
+        try:
+            existing_ids = {schema.id for schema in job_positions_schemas}
+            missing_ids = set(job_positions_ids) - existing_ids
+            return tuple(missing_ids)
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while extracting missing candidates ids: {e}")
+            raise ServiceError(
+                status_code=500,
+            )
+
+    @staticmethod
+    def _calculate_last_page_number_for_get_all_job_positions_response_model(
+            total_number_of_job_positions: int,
+            page_size: int,
+    ) -> int:
+        try:
+            return (total_number_of_job_positions + page_size - 1) // page_size
+        except Exception as e:
+            logger.error(
+                f"Unexpected error occurred while calculating last page number for get all candidates response model: {e}")
+            raise ServiceError(
+                status_code=500,
+            )
+
+    @staticmethod
+    def _create_get_all_job_positions_response_model(
+            page_size: int,
+            page: int,
+            total_number_of_job_positions: int,
+            last_page: int,
+            job_positions_response_models: list[JobPositionResponseModel],
+    ) -> GetAllJobPositionsResponseModel:
+        try:
+            return GetAllJobPositionsResponseModel(
+                page_size=page_size,
+                page=page,
+                total_number_of_entities=total_number_of_job_positions,
+                last_page=last_page,
+                entities=job_positions_response_models,
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while creating get all job positions response model: {e}")
             raise ServiceError(
                 status_code=500,
             )

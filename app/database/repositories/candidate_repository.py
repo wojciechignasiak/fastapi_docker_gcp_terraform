@@ -5,8 +5,7 @@ from app.custom_exceptions.custom_exceptions import DatabaseError
 
 #3rd party libraries
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import insert, select, delete, Insert, Select, Delete
-from sqlalchemy.engine import Result, ScalarResult
+from sqlalchemy import select, Select, func, Sequence, Result
 from fastapi import Depends
 
 #1st party libraries
@@ -28,7 +27,10 @@ class ICandidateRepository(Protocol):
     async def get_multiple_candidates_by_id(self, candidates_ids: tuple[UUID, ...]) -> tuple[CandidateSchema, ...] | tuple:
         ...
 
-    async def get_all_candidates(self) -> tuple[CandidateSchema, ...] | tuple:
+    async def count_number_of_all_candidates(self) -> int:
+        ...
+
+    async def get_all_candidates(self, page_size: int, page: int) -> tuple[CandidateSchema, ...] | tuple:
         ...
 
     async def delete_candidate_by_id(self, candidate_id: UUID) -> None:
@@ -72,19 +74,31 @@ class CandidateRepository(ICandidateRepository):
         self, candidates_ids: tuple[UUID, ...]
     ) -> tuple[CandidateSchema, ...]:
         try:
-            statement = select(CandidateSchema).where(CandidateSchema.id.in_(candidates_ids))
-            result = await self.session.execute(statement)
-            candidates = result.scalars().all()
+            statement: Select = select(CandidateSchema).where(CandidateSchema.id.in_(candidates_ids))
+            result: Result[CandidateSchema] = await self.session.execute(statement)
+            candidates: Sequence[CandidateSchema] = result.scalars().all()
             return tuple(candidates)
         except Exception as e:
             logger.error(f"Unexpected error occurred while getting candidates: {e}")
             raise DatabaseError(status_code=500)
 
-    async def get_all_candidates(self) -> tuple[CandidateSchema, ...]:
+    async def count_number_of_all_candidates(self) -> int:
         try:
-            statement = select(CandidateSchema)
-            result = await self.session.execute(statement)
-            candidates = result.scalars().all()
+            statement: Select = select(func.count()).select_from(CandidateSchema)
+            total_result: Result[int] = await self.session.execute(statement)
+            total_count: int = total_result.scalar_one()
+            return total_count
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while getting all job positions: {e}")
+            raise DatabaseError(
+                status_code=500,
+            )
+
+    async def get_all_candidates(self, page_size: int, page: int) -> tuple[CandidateSchema, ...]:
+        try:
+            statement: Select = select(CandidateSchema).limit(page_size).offset((page - 1) * page_size)
+            result: Result[CandidateSchema] = await self.session.execute(statement)
+            candidates: Sequence[CandidateSchema] = result.scalars().all()
             return tuple(candidates)
         except Exception as e:
             logger.error(f"Unexpected error occurred while getting all candidates: {e}")

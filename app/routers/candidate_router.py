@@ -1,7 +1,7 @@
 #internal modules
 from app.services.candidate_service import ICandidateService, new_candidate_service
-from app.models.candidate_models.candidate_response_models import CandidateResponseModel
-from app.models.candidate_models.candidate_request_models import CreateCandidateRequestModel
+from app.models.candidate_models.candidate_response_models import CandidateResponseModel, GetAllCandidatesResponseModel
+from app.models.candidate_models.candidate_request_models import CreateCandidateRequestModel, GetAllCandidatesRequestModel
 from app.custom_exceptions.custom_exceptions import CustomException
 
 #3rd party libraries
@@ -50,12 +50,13 @@ async def get_candidate(
         logger.error(f"Unexpected error occurred while creating getting candidate: {e}")
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
-@router.get("/get-all-candidates/", response_model=list[CandidateResponseModel], status_code=status.HTTP_200_OK)
+@router.post("/get-all-candidates/", response_model=GetAllCandidatesResponseModel, status_code=status.HTTP_200_OK)
 async def get_all_candidates(
+    pagination: GetAllCandidatesRequestModel,
     candidate_service: ICandidateService = Depends(new_candidate_service),
     ):
     try:
-        candidates: list[CandidateResponseModel] = await candidate_service.get_all_candidates()
+        candidates: GetAllCandidatesResponseModel = await candidate_service.get_all_candidates(pagination)
         return candidates
     except CustomException as e:
         if e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:

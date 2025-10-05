@@ -42,6 +42,7 @@ def new_secret_manager(
         raise e
 
 class SecretManager(ISecretManager):
+    __slots__ = ("environment", "project_id", "secret_manager_client")
     def __init__(
             self,
             environment: str,
@@ -82,6 +83,7 @@ class SecretManager(ISecretManager):
             raise e
 
 class SecretManagerDEV(ISecretManager):
+    __slots__ = "environment"
     def __init__(
             self,
             environment: str,

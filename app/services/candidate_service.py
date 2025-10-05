@@ -1,7 +1,7 @@
 #internal modules
 from app.database.repositories.candidate_repository import ICandidateRepository, new_candidate_repository
-from app.models.candidate_models.candidate_request_models import CreateCandidateRequestModel
-from app.models.candidate_models.candidate_response_models import CandidateResponseModel
+from app.models.candidate_models.candidate_request_models import CreateCandidateRequestModel, GetAllCandidatesRequestModel
+from app.models.candidate_models.candidate_response_models import CandidateResponseModel, GetAllCandidatesResponseModel
 from app.database.schema.candidate_schema import CandidateSchema
 from app.custom_exceptions.custom_exceptions import DataNotFoundError, ServiceError, CustomException
 
@@ -27,7 +27,7 @@ class ICandidateService(Protocol):
     async def get_multiple_candidates_by_id(self, candidates_ids: tuple[UUID, ...]) -> list[CandidateResponseModel]:
         ...
 
-    async def get_all_candidates(self) -> list[CandidateResponseModel]:
+    async def get_all_candidates(self, pagination: GetAllCandidatesRequestModel) -> GetAllCandidatesResponseModel:
         ...
 
     async def remove_candidate_by_id(self, candidate_id: UUID) -> None:
@@ -97,7 +97,7 @@ class CandidateService(ICandidateService):
             missing_customers_ids: tuple[UUID, ...] | tuple = self._extract_missing_candidates_ids(candidates_ids, candidates_schemas)
             if missing_customers_ids:
                 raise DataNotFoundError(
-                    message=f"Candidates not found",
+                    message=f"Candidates with ids {missing_customers_ids} not found",
                     status_code=404,
                 )
 
@@ -119,9 +119,19 @@ class CandidateService(ICandidateService):
                 status_code=500,
             )
 
-    async def get_all_candidates(self) -> list[CandidateResponseModel]:
+    async def get_all_candidates(self, pagination: GetAllCandidatesRequestModel) -> GetAllCandidatesResponseModel:
         try:
-            candidates_schemas: tuple[CandidateSchema, ...] | tuple = await self._candidate_repository.get_all_candidates()
+            total_number_of_candidates: int = await self._candidate_repository.count_number_of_all_candidates()
+            last_page: int = self._calculate_last_page_number_for_get_all_candidates_response_model(
+                total_number_of_candidates=total_number_of_candidates,
+                page_size=pagination.page_size,
+            )
+            if total_number_of_candidates == 0:
+                raise DataNotFoundError(
+                    message=f"No candidates found",
+                    status_code=404,
+                )
+            candidates_schemas: tuple[CandidateSchema, ...] | tuple = await self._candidate_repository.get_all_candidates(pagination.page_size, pagination.page,)
             if not candidates_schemas:
                 raise DataNotFoundError(
                     message="No candidates found",
@@ -132,7 +142,14 @@ class CandidateService(ICandidateService):
                 for candidate_schema
                 in candidates_schemas
             ]
-            return candidate_response_models
+            get_all_candidates_response_model: GetAllCandidatesResponseModel = self._create_get_all_candidates_response_model(
+                page_size=pagination.page_size,
+                page=pagination.page,
+                total_number_of_candidates=total_number_of_candidates,
+                last_page=last_page,
+                candidates_response_models=candidate_response_models,
+            )
+            return get_all_candidates_response_model
         except CustomException as e:
             raise ServiceError(
                 message=e.message,
@@ -189,10 +206,44 @@ class CandidateService(ICandidateService):
     @staticmethod
     def _extract_missing_candidates_ids(candidate_ids: tuple[UUID, ...], candidates_schemas: tuple[CandidateSchema, ...]) -> tuple[UUID, ...] | tuple:
         try:
-            candidates_ids_from_schemas: tuple[UUID, ...] | tuple = tuple(candidate_schema. id for candidate_schema in candidates_schemas)
-            return tuple(candidate_id for candidate_id in candidate_ids if candidate_id not in candidates_ids_from_schemas)
+            existing_ids = {schema.id for schema in candidates_schemas}
+            missing_ids = set(candidate_ids) - existing_ids
+            return tuple(missing_ids)
         except Exception as e:
             logger.error(f"Unexpected error occurred while extracting missing candidates ids: {e}")
             raise ServiceError(
                 status_code=500,
             )
+
+    @staticmethod
+    def _calculate_last_page_number_for_get_all_candidates_response_model(total_number_of_candidates: int, page_size: int,) -> int:
+        try:
+            return (total_number_of_candidates + page_size - 1) // page_size
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while calculating last page number for get all candidates response model: {e}")
+            raise ServiceError(
+                status_code=500,
+            )
+
+    @staticmethod
+    def _create_get_all_candidates_response_model(
+            page_size: int,
+            page: int,
+            total_number_of_candidates: int,
+            last_page: int,
+            candidates_response_models: list[CandidateResponseModel],
+    ) -> GetAllCandidatesResponseModel:
+        try:
+            return GetAllCandidatesResponseModel(
+                page_size=page_size,
+                page=page,
+                total_number_of_entities=total_number_of_candidates,
+                last_page=last_page,
+                entities=candidates_response_models,
+            )
+        except Exception as e:
+            logger.error(f"Unexpected error occurred while creating get all candidates response model: {e}")
+            raise ServiceError(
+                status_code=500,
+            )
+
