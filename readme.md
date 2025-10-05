@@ -18,6 +18,10 @@ Showing what my code looks like, how I write unit and integration tests, how I u
   <img src="./docs/app_architecture.jpg" alt="Architecture" width="700"/>
 </p>
 
+### Requirements
+1. Docker
+2. Docker-Compose
+
 ### Running tests
 1. Go to `fastapi_docker_gcp_terraform` directory
 2. Execute `chmod +x run_tests.sh` command
