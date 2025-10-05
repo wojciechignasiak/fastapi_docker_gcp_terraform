@@ -43,7 +43,7 @@ def new_job_position_service(
 
 
 class JobPositionService(IJobPositionService):
-    __slots__ = 'job_position_repository'
+    __slots__ = '_job_position_repository'
 
     def __init__(self, job_position_repository: IJobPositionRepository) -> None:
         self._job_position_repository: IJobPositionRepository = job_position_repository

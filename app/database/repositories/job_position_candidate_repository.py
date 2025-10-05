@@ -41,9 +41,9 @@ def new_job_position_candidate_repository(session: AsyncSession = Depends(get_se
         )
 
 class JobPositionCandidateRepository(IJobPositionCandidateRepository):
-    __slots__ = 'session'
+    __slots__ = '_session'
     def __init__(self, session: AsyncSession) -> None:
-        self.session: AsyncSession = session
+        self._session: AsyncSession = session
 
     async def assign_candidate_to_job_position(self, candidate_id: UUID, job_position_id: UUID) -> None:
         try:
@@ -51,7 +51,7 @@ class JobPositionCandidateRepository(IJobPositionCandidateRepository):
                 candidate_id=candidate_id,
                 job_position_id=job_position_id
             )
-            await self.session.execute(statement)
+            await self._session.execute(statement)
         except Exception as e:
             logger.error(f"Unexpected error occurred while assigning candidate to job position: {e}")
             raise DatabaseError(
@@ -64,7 +64,7 @@ class JobPositionCandidateRepository(IJobPositionCandidateRepository):
                 (JobPositionCandidateSchema.candidate_id == candidate_id) &  # type: ignore[arg-type]
                 (JobPositionCandidateSchema.job_position_id == job_position_id)  # type: ignore[arg-type]
             )
-            await self.session.execute(statement)
+            await self._session.execute(statement)
         except Exception as e:
             logger.error(f"Unexpected error occurred while unassigning candidate from job position: {e}")
             raise DatabaseError(
@@ -74,7 +74,7 @@ class JobPositionCandidateRepository(IJobPositionCandidateRepository):
     async def get_all_job_positions_and_candidates_ids(self) -> tuple[JobPositionCandidateSchema, ...] | tuple:
         try:
             statement: Select[tuple[JobPositionCandidateSchema]] = select(JobPositionCandidateSchema)
-            result: Result[tuple[JobPositionCandidateSchema]] = await self.session.execute(statement)
+            result: Result[tuple[JobPositionCandidateSchema]] = await self._session.execute(statement)
             relations: ScalarResult[JobPositionCandidateSchema] = result.scalars()
             return tuple(relations.all())
         except Exception as e:
@@ -88,7 +88,7 @@ class JobPositionCandidateRepository(IJobPositionCandidateRepository):
             statement: Select[tuple[JobPositionCandidateSchema]] = select(JobPositionCandidateSchema).where(
                 JobPositionCandidateSchema.job_position_id == job_position_id  # type: ignore[arg-type]
             )
-            result: Result[tuple[JobPositionCandidateSchema]] = await self.session.execute(statement)
+            result: Result[tuple[JobPositionCandidateSchema]] = await self._session.execute(statement)
             relations: ScalarResult[JobPositionCandidateSchema] = result.scalars()
             candidate_ids: tuple[UUID, ...] | tuple = tuple(relation.candidate_id for relation in relations.all())
             return candidate_ids
@@ -103,7 +103,7 @@ class JobPositionCandidateRepository(IJobPositionCandidateRepository):
             statement: Select[tuple[JobPositionCandidateSchema]] = select(JobPositionCandidateSchema).where(
                 JobPositionCandidateSchema.candidate_id == candidate_id  # type: ignore[arg-type]
             )
-            result: Result[tuple[JobPositionCandidateSchema]] = await self.session.execute(statement)
+            result: Result[tuple[JobPositionCandidateSchema]] = await self._session.execute(statement)
             relations: ScalarResult[JobPositionCandidateSchema] = result.scalars()
             job_position_ids: tuple[UUID, ...]  | tuple= tuple(relation.job_position_id for relation in relations.all())
             return job_position_ids

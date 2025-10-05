@@ -12,6 +12,6 @@ router: APIRouter = APIRouter()
 @router.get("/welcome", status_code=status.HTTP_200_OK)
 async def welcome():
     try:
-        return JSONResponse(status_code=200, content={"message": "PoC for Fintec Sp. z o.o. Company! :)"})
+        return JSONResponse(status_code=200, content={"message": "PoC for Finitec Sp. z o.o. Company! :)"})
     except Exception:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")

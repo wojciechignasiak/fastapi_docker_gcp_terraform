@@ -23,7 +23,6 @@ from starlette.middleware.cors import CORSMiddleware
 from starlette import middleware
 from dotenv import load_dotenv
 
-from app.secret_manager.secret_manager import SecretManager
 
 load_dotenv()
 

@@ -1,7 +1,7 @@
 variable "project_id" {
-  description = "fintec-python-developer"
+  description = "finitec-python-developer"
   type        = string
-  default = "fintec-python-developer"
+  default = "finitec-python-developer"
 }
 
 variable "region" {
@@ -19,25 +19,25 @@ variable "zone" {
 variable "vpc_network_name" {
   description = "VPC network name"
   type = string
-  default = "fintec-vpc-network"
+  default = "finitec-vpc-network"
 }
 
 variable "firewall_name" {
   description = "Firewall name"
   type = string
-  default = "fintec-firewall"
+  default = "finitec-firewall"
 }
 
 variable "web_app_vm_instance_name" {
   description = "Web Application Virtual Machine instance name"
-  type = "string"
-  default = "fintec-vm"
+  type = string
+  default = "finitec-vm"
 }
 
 variable "database_name" {
   description = "Database instance name"
   type        = string
-  default     = "fintec-python-developer-database"
+  default     = "finitec-python-developer-database"
 }
 
 variable  "database_username"  {

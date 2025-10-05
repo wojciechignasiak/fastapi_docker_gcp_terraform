@@ -47,13 +47,13 @@ def new_candidate_repository(session: AsyncSession = Depends(get_session)) -> IC
         )
 
 class CandidateRepository(ICandidateRepository):
-    __slots__ = 'session'
+    __slots__ = '_session'
     def __init__(self, session: AsyncSession) -> None:
-        self.session: AsyncSession = session
+        self._session: AsyncSession = session
 
     async def create_candidate(self, candidate: CandidateSchema) -> None:
         try:
-            self.session.add(candidate)
+            self._session.add(candidate)
         except Exception as e:
             logger.error(f"Unexpected error occurred while creating new candidate: {e}")
             raise DatabaseError(
@@ -62,7 +62,7 @@ class CandidateRepository(ICandidateRepository):
 
     async def get_candidate_by_id(self, candidate_id: UUID) -> CandidateSchema | None:
         try:
-            candidate: CandidateSchema | None = await self.session.get(CandidateSchema, candidate_id)
+            candidate: CandidateSchema | None = await self._session.get(CandidateSchema, candidate_id)
             return candidate
         except Exception as e:
             logger.error(f"Unexpected error occurred while getting candidate: {e}")
@@ -75,7 +75,7 @@ class CandidateRepository(ICandidateRepository):
     ) -> tuple[CandidateSchema, ...]:
         try:
             statement: Select = select(CandidateSchema).where(CandidateSchema.id.in_(candidates_ids))
-            result: Result[CandidateSchema] = await self.session.execute(statement)
+            result: Result[CandidateSchema] = await self._session.execute(statement)
             candidates: Sequence[CandidateSchema] = result.scalars().all()
             return tuple(candidates)
         except Exception as e:
@@ -85,7 +85,7 @@ class CandidateRepository(ICandidateRepository):
     async def count_number_of_all_candidates(self) -> int:
         try:
             statement: Select = select(func.count()).select_from(CandidateSchema)
-            total_result: Result[int] = await self.session.execute(statement)
+            total_result: Result[int] = await self._session.execute(statement)
             total_count: int = total_result.scalar_one()
             return total_count
         except Exception as e:
@@ -97,7 +97,7 @@ class CandidateRepository(ICandidateRepository):
     async def get_all_candidates(self, page_size: int, page: int) -> tuple[CandidateSchema, ...]:
         try:
             statement: Select = select(CandidateSchema).limit(page_size).offset((page - 1) * page_size)
-            result: Result[CandidateSchema] = await self.session.execute(statement)
+            result: Result[CandidateSchema] = await self._session.execute(statement)
             candidates: Sequence[CandidateSchema] = result.scalars().all()
             return tuple(candidates)
         except Exception as e:
@@ -106,10 +106,10 @@ class CandidateRepository(ICandidateRepository):
 
     async def delete_candidate_by_id(self, candidate_id: UUID) -> None:
         try:
-            candidate: CandidateSchema | None = await self.session.get(CandidateSchema, candidate_id)
+            candidate: CandidateSchema | None = await self._session.get(CandidateSchema, candidate_id)
             if candidate is not None:
-                await self.session.delete(candidate)
+                await self._session.delete(candidate)
         except Exception as e:
-            await self.session.rollback()
+            await self._session.rollback()
             logger.error(f"Unexpected error occurred while deleting candidate: {e}")
             raise DatabaseError(status_code=500)

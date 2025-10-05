@@ -58,7 +58,7 @@ def new_job_position_candidate_service(
 
 
 class JobPositionCandidateService(IJobPositionCandidateService):
-    __slots__ = ("job_position_candidate_repository", "candidate_service", "job_position_service")
+    __slots__ = ("_job_position_candidate_repository", "_candidate_service", "_job_position_service")
 
     def __init__(
             self,

@@ -46,13 +46,13 @@ def new_job_position_repository(session: AsyncSession = Depends(get_session)) ->
         )
 
 class JobPositionRepository(IJobPositionRepository):
-    __slots__ = 'session'
+    __slots__ = '_session'
     def __init__(self, session: AsyncSession) -> None:
-        self.session: AsyncSession = session
+        self._session: AsyncSession = session
 
     async def create_job_position(self, job_position: JobPositionSchema) -> None:
         try:
-            self.session.add(job_position)
+            self._session.add(job_position)
         except Exception as e:
             logger.error(f"Unexpected error occurred while creating new job position: {e}")
             raise DatabaseError(
@@ -62,7 +62,7 @@ class JobPositionRepository(IJobPositionRepository):
     async def get_multiple_job_positions_by_id(self, job_positions_ids: tuple[UUID, ...]) -> tuple[JobPositionSchema, ...] | tuple:
         try:
             statement = select(JobPositionSchema).where(JobPositionSchema.id.in_(job_positions_ids))
-            result: Result = await self.session.execute(statement)
+            result: Result = await self._session.execute(statement)
             job_positions = result.scalars().all()
             return tuple(job_positions)
         except Exception as e:
@@ -74,7 +74,7 @@ class JobPositionRepository(IJobPositionRepository):
     async def count_number_of_all_job_positions(self) -> int:
         try:
             statement = select(func.count()).select_from(JobPositionSchema)
-            total_result: Result = await self.session.execute(statement)
+            total_result: Result = await self._session.execute(statement)
             total_count: int = total_result.scalar_one()
             return total_count
         except Exception as e:
@@ -86,7 +86,7 @@ class JobPositionRepository(IJobPositionRepository):
     async def get_all_job_positions(self, page_size: int, page: int) -> tuple[JobPositionSchema, ...]:
         try:
             statement = select(JobPositionSchema).limit(page_size).offset((page - 1) * page_size)
-            result: Result = await self.session.execute(statement)
+            result: Result = await self._session.execute(statement)
             job_positions = result.scalars().all()
             return tuple(job_positions)
         except Exception as e:
@@ -97,7 +97,7 @@ class JobPositionRepository(IJobPositionRepository):
 
     async def get_job_position_by_id(self, job_position_id: UUID) -> JobPositionSchema | None:
         try:
-            job_position: JobPositionSchema | None = await self.session.get(JobPositionSchema, job_position_id)
+            job_position: JobPositionSchema | None = await self._session.get(JobPositionSchema, job_position_id)
             print(job_position)
             if job_position:
                 return job_position
@@ -110,9 +110,9 @@ class JobPositionRepository(IJobPositionRepository):
 
     async def delete_job_position_by_id(self, job_position_id: UUID) -> None:
         try:
-            job_position: JobPositionSchema | None = await self.session.get(JobPositionSchema, job_position_id)
+            job_position: JobPositionSchema | None = await self._session.get(JobPositionSchema, job_position_id)
             if job_position is not None:
-                await self.session.delete(job_position)
+                await self._session.delete(job_position)
         except Exception as e:
             logger.error(f"Unexpected error occurred while deleting job position: {e}")
             raise DatabaseError(

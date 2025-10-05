@@ -44,7 +44,8 @@ def new_candidate_service(candidate_repository: ICandidateRepository = Depends(n
         )
 
 class CandidateService(ICandidateService):
-    __slots__ = 'candidate_repository'
+    __slots__ = '_candidate_repository'
+    
     def __init__(self, candidate_repository: ICandidateRepository) -> None:
         self._candidate_repository: ICandidateRepository = candidate_repository
 

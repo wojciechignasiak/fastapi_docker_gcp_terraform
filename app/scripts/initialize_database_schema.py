@@ -8,12 +8,14 @@ from app.secret_manager.secret_manager import ISecretManager, new_secret_manager
 #3rd party libraries
 from sqlmodel import SQLModel, create_engine
 
+#1st party libraries
+from urllib.parse import quote_plus
 
 def init_db(database_credentials: DatabaseCredentials):
     database_url = f"postgresql://{
-    database_credentials.username
+    quote_plus(database_credentials.username)
     }:{
-    database_credentials.password
+    quote_plus(database_credentials.password)
     }@{
     database_credentials.host
     }:{
