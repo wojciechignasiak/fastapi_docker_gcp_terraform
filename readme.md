@@ -14,6 +14,15 @@ Showing what my code looks like, how I write unit and integration tests, how I u
   <img src="./docs/app_architecture.jpg" alt="Architecture" width="700"/>
 </p>
 
+### Requirements
+1. Docker
+2. Docker-Compose
+
+### Running tests
+1. Go to `fastapi_docker_gcp_terraform` directory
+2. Execute `chmod +x run_tests.sh` command
+3. Execute `./run_tests.sh` command
+
 ### Run on dev with docker-compose
 1. Go to `fastapi_docker_gcp_terraform` directory
 2. Create `.env` file from `.env.template` file
@@ -30,16 +39,15 @@ Showing what my code looks like, how I write unit and integration tests, how I u
 3. Go to `fastapi_docker_gcp_terraform` directory
 4. Open and edit variables in `build_and_publish_image_to_gcp.sh`
 5. Execute `chmod +x build_and_publish_image_to_gcp.sh` command
-6. Go to `infrastructure` directory
-7. Edit variables in `variables.tf` file to match your project id
-8. Execute `terraform init` command
-9. Execute `terraform plan` command
-10. Execute `terraform apply` command
-11. Connect to created VM via SSH
-12. Execute `sudo docker ps` command and copy container ID
-13. Execute `sudo docker exec -it {your_container_id} python -b /usr/src/app/scripts/initialize_database_schema.py` command
-14. Execute script using `sudo docker exec -it {your_container_id} python -b /usr/src/app/scripts/insert_stock_data.py` command 
-15. Go to `{your_ip_address}/welcome` page
-
-### Notes for run on GCP
+6. Execute `./build_and_publish_image_to_gcp.sh` command to push image to gcr
+7. Go to `infrastructure` directory
+8. Edit variables in `variables.tf` file to match your project id
+9. Execute `terraform init` command
+10. Execute `terraform plan` command
+11. Execute `terraform apply` command
+12. Connect to created VM via SSH
+13. Execute `sudo docker ps` command and copy container ID
+14. Execute `sudo docker exec -it {your_container_id} python -b /usr/src/app/scripts/initialize_database_schema.py` command
+15. Execute script using `sudo docker exec -it {your_container_id} python -b /usr/src/app/scripts/insert_stock_data.py` command 
+16. Go to `{your_ip_address}/welcome` page
 
