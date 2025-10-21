@@ -1,17 +1,39 @@
-FROM python:3.13-alpine
-
-RUN apk add --no-cache netcat-openbsd
+FROM python:3.14-alpine
+FROM python:3.14-alpine AS builder
 
 WORKDIR /usr/src
+
+RUN apk add --no-cache \
+    gcc \
+    g++ \
+    musl-dev \
+    postgresql-dev \
+    libffi-dev \
+    make
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+RUN pip install --no-cache-dir -U cffi pip setuptools
+
+COPY app/requirements.txt ./app/requirements.txt
+RUN pip install --no-cache-dir --prefix=/install -r ./app/requirements.txt
+
+FROM python:3.14-alpine
+
+WORKDIR /usr/src
+
+RUN apk add --no-cache \
+    netcat-openbsd \
+    libpq \
+    libffi \
+    libstdc++
 
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONPATH=/usr/src
 
-RUN pip install --no-cache-dir -U cffi pip setuptools
-
-COPY app/requirements.txt ./app/requirements.txt
-RUN pip install --no-cache-dir -r ./app/requirements.txt
+COPY --from=builder /install /usr/local
 
 COPY ./app ./app
 
