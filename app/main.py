@@ -2,6 +2,7 @@
 from app.database.connection.create_engine import create_engine
 from app.models.app_config_models.database_credentials_model import DatabaseCredentials
 from app.secret_manager.secret_manager import new_secret_manager, ISecretManager
+from app.routers.middleware.middleware import ErrorHandlingMiddleware
 
 ##routers
 from app.routers import (
@@ -15,6 +16,7 @@ from app.routers import (
 from contextlib import asynccontextmanager
 import os
 import logging
+import sys
 
 #3rd party libraries
 from sqlalchemy.ext.asyncio import AsyncEngine
@@ -30,9 +32,11 @@ ENVIRONMENT: str = os.environ.get("ENVIRONMENT")
 secret_manager: ISecretManager = new_secret_manager()
 
 logging.basicConfig(
-    filename='./app/logs/logs.log',
-    level=logging.ERROR,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+            logging.StreamHandler(sys.stdout),
+        ]
 )
 
 
@@ -52,7 +56,7 @@ async def lifespan(app: FastAPI):
             Initialise databases clients.
     '''
     database_credentials: DatabaseCredentials = secret_manager.get_database_credentials()
-
+    logging.getLogger("uvicorn.access").disabled = True
     engine: AsyncEngine = create_engine(database_credentials)
     app.state.engine = engine
 
@@ -70,6 +74,7 @@ def create_application() -> FastAPI:
         application = FastAPI(lifespan=lifespan, middleware=middlewares)
     else:
         application = FastAPI(lifespan=lifespan, openapi_url="/openapi.json", docs_url="/docs", middleware=middlewares)
+    application.add_middleware(ErrorHandlingMiddleware)
     application.include_router(welcome_router.router, tags=["welcome"])
     application.include_router(candidate_router.router, prefix="/candidate", tags=["candidates"])
     application.include_router(job_position_router.router, prefix="/job-position", tags=["job_positions"])

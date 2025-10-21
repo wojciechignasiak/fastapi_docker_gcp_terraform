@@ -1,7 +1,7 @@
 variable "project_id" {
-  description = "finitec-python-developer"
+  description = "your_project_name"
   type        = string
-  default = "finitec-python-developer"
+  default = "your_project_name"
 }
 
 variable "region" {
@@ -37,7 +37,7 @@ variable "web_app_vm_instance_name" {
 variable "database_name" {
   description = "Database instance name"
   type        = string
-  default     = "finitec-python-developer-database"
+  default     = "my-database"
 }
 
 variable  "database_username"  {

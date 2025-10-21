@@ -1,8 +1,4 @@
-## PoC FastAPI + Docker + GCP + Terraform for finitec company
-
-<p align="center">
-  <img src="./docs/finitec.png" alt="finitec" width="300"/>
-</p>
+## PoC FastAPI + Docker + GCP + Terraform
 
 ### Purpose
 Showing what my code looks like, how I write unit and integration tests, how I use FastAPI framework and my approach to architecture.
@@ -41,7 +37,7 @@ Showing what my code looks like, how I write unit and integration tests, how I u
 10. Execute `terraform apply` command
 11. Connect to created VM via SSH
 12. Execute `sudo docker ps` command and copy container ID
-13. Execute `sudo docker exec -it 594d85718ad9 python -b /usr/src/app/scripts/initialize_database_schema.py` command
+13. Execute `sudo docker exec -it {your_container_id} python -b /usr/src/app/scripts/initialize_database_schema.py` command
 14. Execute script using `sudo docker exec -it {your_container_id} python -b /usr/src/app/scripts/insert_stock_data.py` command 
 15. Go to `{your_ip_address}/welcome` page
 

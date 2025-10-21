@@ -2,11 +2,9 @@
 from app.services.job_position_candidate_service import IJobPositionCandidateService, new_job_position_candidate_service
 from app.models.job_position_candidate_models.candidate_job_position_request_models import AssignCandidateToJobPositionRequestModel, UnassignCandidateFromJobPositionRequestModel
 from app.models.job_position_candidate_models.candidate_job_position_response_models import JobPositionCandidatesResponseModel, CandidateJobPositionsResponseModel
-from app.custom_exceptions.custom_exceptions import CustomException
 
 #3rd party libraries
-from fastapi import APIRouter, HTTPException, status, Depends
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, status, Depends
 
 #1st party libraries
 from uuid import UUID
@@ -20,66 +18,30 @@ router: APIRouter = APIRouter()
 async def assign_candidate_to_job_position(
     candidate_to_job_position: AssignCandidateToJobPositionRequestModel,
     job_position_candidate_service: IJobPositionCandidateService = Depends(new_job_position_candidate_service),
-    ):
-    try:
-        await job_position_candidate_service.assign_candidate_to_job_position(candidate_to_job_position)
-    except CustomException as e:
-        if e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-        else:
-            raise HTTPException(status_code=e.status_code, detail=e.message)
-    except Exception as e:
-        logger.error(f"Unexpected error occurred while assigning candidate to job position: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+):
+    await job_position_candidate_service.assign_candidate_to_job_position(candidate_to_job_position)
 
 
 @router.patch("/unassign-candidate-from-job-position/", status_code=status.HTTP_200_OK)
 async def unassign_candidate_from_job_position(
     candidate_from_job_position: UnassignCandidateFromJobPositionRequestModel,
     job_position_candidate_service: IJobPositionCandidateService = Depends(new_job_position_candidate_service),
-    ):
-    try:
-        await job_position_candidate_service.unassign_candidate_from_job_position(candidate_from_job_position)
-    except CustomException as e:
-        if e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-        else:
-            raise HTTPException(status_code=e.status_code, detail=e.message)
-    except Exception as e:
-        logger.error(f"Unexpected error occurred while unassigning candidate from job position: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+):
+    await job_position_candidate_service.unassign_candidate_from_job_position(candidate_from_job_position)
 
 @router.get("/get-job-position-candidates/", response_model=JobPositionCandidatesResponseModel)
 async def get_job_position_candidates(
     job_position_id: UUID,
     job_position_candidate_service: IJobPositionCandidateService = Depends(new_job_position_candidate_service),
-    ):
-    try:
-        job_position_candidates: JobPositionCandidatesResponseModel = await job_position_candidate_service.get_job_position_candidates(job_position_id)
-        return job_position_candidates
-    except CustomException as e:
-        if e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-        else:
-            raise HTTPException(status_code=e.status_code, detail=e.message)
-    except Exception as e:
-        logger.error(f"Unexpected error occurred while getting job position candidates: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+):
+    job_position_candidates: JobPositionCandidatesResponseModel = await job_position_candidate_service.get_job_position_candidates(job_position_id)
+    return job_position_candidates
 
 
 @router.get("/get-candidate-job-positions/", response_model=CandidateJobPositionsResponseModel)
 async def get_candidate_job_positions(
     candidate_id: UUID,
     job_position_candidate_service: IJobPositionCandidateService = Depends(new_job_position_candidate_service),
-    ):
-    try:
-        candidate_job_positions: CandidateJobPositionsResponseModel = await job_position_candidate_service.get_candidate_job_positions(candidate_id)
-        return candidate_job_positions
-    except CustomException as e:
-        if e.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
-        else:
-            raise HTTPException(status_code=e.status_code, detail=e.message)
-    except Exception as e:
-        logger.error(f"Unexpected error occurred while getting candidate job positions: {e}")
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+):
+    candidate_job_positions: CandidateJobPositionsResponseModel = await job_position_candidate_service.get_candidate_job_positions(candidate_id)
+    return candidate_job_positions
